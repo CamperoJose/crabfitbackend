@@ -31,24 +31,21 @@ public class PersonRest {
                     personRequest.getSecret()
             );
 
-            return ResponseFormatter.success(response, "Solicitud exitosa y persona registrada correctamente", "INS-001");
+            return ResponseFormatter.success(response, "Solicitud exitosa y persona registrada correctamente", "NEW-USER-001");
 
         } catch (IllegalArgumentException e) {
-            // En caso de error, devolvemos un código interno y el mensaje de error
-            return ResponseFormatter.badRequest("ERR-002", e.getMessage());
+            return ResponseFormatter.badRequest("ERR-USER-055", e.getMessage());
 
         } catch (ConstraintViolationException e) {
-            // Para las violaciones de restricciones, extraemos el mensaje y asignamos un código
-            String message = "Ocurrieron errores de validación.";
-            String internalCode = "ERR-003";
+            String message = "Ocurrieron errores de validación."; // Default message
+            String internalCode = "ERR-USER-044";
             for (ConstraintViolation<?> violation : e.getConstraintViolations()) {
-                message = violation.getMessage();  // Asignamos el mensaje de la violación
+                message = violation.getMessage();
             }
             return ResponseFormatter.badRequest(internalCode, message);
 
         } catch (Exception e) {
-            // Error general, devolvemos un código de error interno y el mensaje
-            return ResponseFormatter.error(e.getMessage(), "ERR-001");
+            return ResponseFormatter.error(e.getMessage(), "ERR-099");
         }
     }
 

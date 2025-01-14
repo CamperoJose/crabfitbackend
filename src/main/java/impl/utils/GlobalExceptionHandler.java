@@ -5,9 +5,6 @@ import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Set;
 
 @Provider
@@ -15,19 +12,15 @@ public class GlobalExceptionHandler implements ExceptionMapper<ConstraintViolati
 
     @Override
     public Response toResponse(ConstraintViolationException exception) {
-        // Aquí, en lugar de concatenar todo, solo extraemos el mensaje de la violación y el código de error
-        String message = "Ocurrieron errores de validación.";
-        String internalCode = "ERR-003";  // Esto podría depender del tipo de error o una constante predefinida
+        String message = "Ocurriero un error.";
+        String internalCode = "ERR-SET-000";
         for (ConstraintViolation<?> violation : exception.getConstraintViolations()) {
-            message = violation.getMessage(); // Aquí asignamos el mensaje de error relevante
-            internalCode = "ERR-003"; // Código de error, puedes ajustar según la violación
+            message = violation.getMessage();
+            internalCode = "ERR-000";
         }
 
-        // Llamamos a ResponseFormatter con los valores adecuados
         return ResponseFormatter.badRequest(internalCode, message);
     }
-
-
 
     private String formatViolationDetails(Set<ConstraintViolation<?>> violations) {
         StringBuilder details = new StringBuilder();
@@ -38,5 +31,4 @@ public class GlobalExceptionHandler implements ExceptionMapper<ConstraintViolati
         }
         return details.toString();
     }
-
 }

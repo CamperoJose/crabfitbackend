@@ -7,12 +7,10 @@ import java.util.regex.Pattern;
 
 public class PasswordValidator implements ConstraintValidator<PasswordConstraint, String> {
 
-    // Expresión regular para la validación
     private static final String PASSWORD_PATTERN = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{6,}$";
 
     @Override
     public void initialize(PasswordConstraint constraintAnnotation) {
-        // No es necesario inicializar nada específico
     }
 
     @Override
