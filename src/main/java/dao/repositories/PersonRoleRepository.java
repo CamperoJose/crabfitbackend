@@ -16,16 +16,12 @@ public class PersonRoleRepository extends PanacheEntity {
     @JoinColumn(name = "role_id", nullable = false)
     private RoleRepository role;
 
-    @NotNull
-    private boolean isActive;
-
     public PersonRoleRepository() {
     }
 
-    public PersonRoleRepository(PersonRepository person, RoleRepository role, boolean isActive) {
+    public PersonRoleRepository(PersonRepository person, RoleRepository role) {
         this.person = person;
         this.role = role;
-        this.isActive = isActive;
     }
 
     public PersonRepository getPerson() {
@@ -44,21 +40,12 @@ public class PersonRoleRepository extends PanacheEntity {
         this.role = role;
     }
 
-    public boolean isActive() {
-        return isActive;
-    }
-
-    public void setActive(boolean active) {
-        isActive = active;
-    }
-
     @Override
     public String toString() {
         return "PersonRole{" +
                 "id=" + id +
                 ", person=" + person +
                 ", role=" + role +
-                ", isActive=" + isActive +
                 '}';
     }
 }

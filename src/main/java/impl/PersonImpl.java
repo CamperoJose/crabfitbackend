@@ -1,18 +1,22 @@
 package impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import dao.repositories.PersonRepository;
+import dao.repositories.PersonRoleRepository;
+import dao.repositories.RoleRepository;
+import impl.utils.JwtUtils;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import impl.utils.PasswordConstraint;
 import impl.utils.PasswordUtils;
-import impl.utils.ResponseFormatter;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class PersonImpl {
@@ -45,6 +49,10 @@ public class PersonImpl {
             response.put("mail", person.getMail());
             response.put("created_at", person.getCreated_at().toString());
 
+            RoleRepository role = RoleRepository.findById(2);
+            PersonRoleRepository personRole = new PersonRoleRepository(person, role);
+            personRole.persist();
+
             return response;
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(e.getMessage());
@@ -52,4 +60,47 @@ public class PersonImpl {
             throw new IllegalArgumentException("Error al registrar usuario. Detalles: " + e.getMessage());
         }
     }
+
+    @Transactional
+    public Map<String, Object> loginPerson(
+            @NotBlank(message = "El nombre de usuario no puede estar vacío.") String username,
+            @NotBlank(message = "La contraseña no puede estar vacía.") String secret
+    ) {
+        try {
+            PersonRepository person = PersonRepository.find("username", username).firstResult();
+
+            if (person == null) {
+                throw new IllegalArgumentException("Usuario inexistente.");
+            }
+
+            if (!PasswordUtils.verifyPassword(secret, person.getSecret())) {
+                throw new IllegalArgumentException("Credenciales incorrectas.");
+            }
+
+            List<RoleRepository> roles = PersonRoleRepository.find("person", person)
+                    .stream()
+                    .map(entity -> ((PersonRoleRepository) entity).getRole())
+                    .collect(Collectors.toList());
+
+            String token = JwtUtils.generateToken(person, roles);
+
+            Map<String, Object> response = new LinkedHashMap<>();
+
+            response.put("person_id", person.id);
+            response.put("name", person.getName());
+            response.put("username", person.getUsername());
+            response.put("mail", person.getMail());
+            response.put("roles", roles.stream().map(RoleRepository::getRoleName).collect(Collectors.toList()));
+
+            response.put("token", token);
+
+            return response;
+
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(e.getMessage());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Error al iniciar sesión. Detalles: " + e.getMessage());
+        }
+    }
+
 }

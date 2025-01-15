@@ -11,6 +11,7 @@ import impl.PersonImpl;
 import impl.utils.ResponseFormatter;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Path("/api/v1/person")
 @Produces(MediaType.APPLICATION_JSON)
@@ -48,6 +49,34 @@ public class PersonRest {
             return ResponseFormatter.error(e.getMessage(), "ERR-099");
         }
     }
+
+    @POST
+    @Path("/login")
+    public Response loginPerson(PersonRepository personRequest) {
+        try {
+            Map<String, Object> response = personService.loginPerson(
+                    personRequest.getUsername(),
+                    personRequest.getSecret()
+            );
+
+            return ResponseFormatter.success(response, "Inicio de sesión exitoso", "LOGIN-USER-001");
+
+        } catch (IllegalArgumentException e) {
+            return ResponseFormatter.badRequest("ERR-USER-056", e.getMessage());
+
+        } catch (ConstraintViolationException e) {
+            String message = "Ocurrieron errores de validación."; // Default message
+            String internalCode = "ERR-USER-045";
+            for (ConstraintViolation<?> violation : e.getConstraintViolations()) {
+                message = violation.getMessage();
+            }
+            return ResponseFormatter.badRequest(internalCode, message);
+
+        } catch (Exception e) {
+            return ResponseFormatter.error(e.getMessage(), "ERR-099");
+        }
+    }
+
 
 
 }
