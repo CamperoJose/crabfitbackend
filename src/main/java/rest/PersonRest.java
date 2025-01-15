@@ -77,6 +77,30 @@ public class PersonRest {
         }
     }
 
+    @POST
+    @Path("/register/coach")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response registerCoach(PersonRepository personRequest, @HeaderParam("Authorization") String token) {
+        try {
+            Map<String, String> response = personService.registerCoach(
+                    personRequest.getName(),
+                    personRequest.getUsername(),
+                    personRequest.getMail(),
+                    personRequest.getSecret(),
+                    token
+            );
+
+            return ResponseFormatter.success(response, "Coach registrado correctamente", "NEW-COACH-001");
+
+        } catch (IllegalArgumentException e) {
+            return ResponseFormatter.badRequest("ERR-COACH-001", e.getMessage());
+
+        } catch (Exception e) {
+            return ResponseFormatter.error(e.getMessage(), "ERR-099");
+        }
+    }
+
+
 
 
 }
