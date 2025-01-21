@@ -9,6 +9,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 
+import java.util.List;
 import java.util.Map;
 
 @ApplicationScoped
@@ -48,6 +49,75 @@ public class KeycloakService {
         }
     }
 
+    public String getUserIdByUsername(String username, String accessToken) {
+        String userEndpoint = keycloakUrl + "/admin/realms/" + realm + "/users?username=" + username;
+        LOG.debug("Formed user search endpoint URL: " + userEndpoint);
+
+        WebTarget target = ClientBuilder.newClient().target(userEndpoint);
+
+        Response response = target.request(MediaType.APPLICATION_JSON_TYPE)
+                .header("Authorization", "Bearer " + accessToken)
+                .get();
+
+        LOG.debug("User search request status: " + response.getStatus());
+
+        if (response.getStatus() == 200) {
+            List<Map<String, Object>> users = response.readEntity(List.class);
+            if (users.isEmpty()) {
+                throw new RuntimeException("User not found");
+            }
+            String userId = (String) users.get(0).get("id");
+            LOG.debug("User ID: " + userId);
+            return userId;
+        } else {
+            String errorResponse = response.readEntity(String.class);
+            LOG.error("Error response: " + errorResponse);
+            throw new RuntimeException("Error al obtener el ID del usuario: " + response.getStatus() + " - " + errorResponse);
+        }
+    }
+
+    public void assignRoleToUser(String userId, String roleId, String accessToken) {
+        String roleMappingEndpoint = keycloakUrl + "/admin/realms/" + realm + "/users/" + userId + "/role-mappings/realm";
+        LOG.debug("Formed role assignment endpoint URL: " + roleMappingEndpoint);
+
+        WebTarget target = ClientBuilder.newClient().target(roleMappingEndpoint);
+
+        Map<String, String> rolePayload = Map.of("id", roleId, "name", "student");
+
+        Response response = target.request(MediaType.APPLICATION_JSON_TYPE)
+                .header("Authorization", "Bearer " + accessToken)
+                .post(Entity.json(new Map[]{rolePayload}));
+
+        LOG.debug("Role assignment request status: " + response.getStatus());
+
+        if (response.getStatus() != 204) {
+            String errorResponse = response.readEntity(String.class);
+            LOG.error("Error response: " + errorResponse);
+            throw new RuntimeException("Error al asignar el rol al usuario: " + response.getStatus() + " - " + errorResponse);
+        }
+    }
+
+    public void assignRoleToUserCoach(String userId, String roleId, String accessToken) {
+        String roleMappingEndpoint = keycloakUrl + "/admin/realms/" + realm + "/users/" + userId + "/role-mappings/realm";
+        LOG.debug("Formed role assignment endpoint URL: " + roleMappingEndpoint);
+
+        WebTarget target = ClientBuilder.newClient().target(roleMappingEndpoint);
+
+        Map<String, String> rolePayload = Map.of("id", roleId, "name", "coach");
+
+        Response response = target.request(MediaType.APPLICATION_JSON_TYPE)
+                .header("Authorization", "Bearer " + accessToken)
+                .post(Entity.json(new Map[]{rolePayload}));
+
+        LOG.debug("Role assignment request status: " + response.getStatus());
+
+        if (response.getStatus() != 204) {
+            String errorResponse = response.readEntity(String.class);
+            LOG.error("Error response: " + errorResponse);
+            throw new RuntimeException("Error al asignar el rol al usuario: " + response.getStatus() + " - " + errorResponse);
+        }
+    }
+
     public void createUser(Map<String, Object> userDetails) {
         String accessToken = getAccessToken();
         String userEndpoint = keycloakUrl + "/admin/realms/" + realm + "/users";
@@ -67,4 +137,5 @@ public class KeycloakService {
             throw new RuntimeException("Error al crear usuario: " + errorResponse);
         }
     }
+
 }
