@@ -1,9 +1,9 @@
 package impl.utils.keycloak;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 import dto.UserRequestDTO;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Form;
@@ -18,14 +18,24 @@ public class KeycloakService {
 
     private static final Logger LOG = Logger.getLogger(KeycloakService.class);
 
-    @Inject
-    KeycloakConfig config;
+    @ConfigProperty(name = "keycloak.url")
+    String keycloakUrl;
+
+    @ConfigProperty(name = "keycloak.realm")
+    String keycloakRealm;
+
+    @ConfigProperty(name = "keycloak.client-id")
+    String clientId;
+
+    @ConfigProperty(name = "keycloak.client-secret")
+    String clientSecret;
 
     public String getAccessToken() {
-        String tokenEndpoint = config.getKeycloakUrl() + "/realms/" + config.getRealm() + "/protocol/openid-connect/token";
+        String tokenEndpoint = keycloakUrl + "/realms/" + keycloakRealm + "/protocol/openid-connect/token";
+
         Form form = new Form()
-                .param("client_id", config.getClientId())
-                .param("client_secret", config.getClientSecret())
+                .param("client_id", clientId)
+                .param("client_secret", clientSecret)
                 .param("grant_type", "client_credentials");
 
         Response response = ClientBuilder.newClient().target(tokenEndpoint)
@@ -38,7 +48,6 @@ public class KeycloakService {
             throw new KeycloakServiceException("Error al obtener el token: " + response.getStatus());
         }
     }
-
 
     public void createAndAssignRole(UserRequestDTO userRequest, String roleName) {
         Logger logger = Logger.getLogger(getClass());
@@ -77,7 +86,7 @@ public class KeycloakService {
                 )
         );
 
-        String userEndpoint = config.getKeycloakUrl() + "/admin/realms/" + config.getRealm() + "/users";
+        String userEndpoint = keycloakUrl + "/admin/realms/" + keycloakRealm + "/users";
 
         logger.infof("Endpoint para crear usuario: %s", userEndpoint);
         logger.infof("Payload para crear usuario: %s", userPayload);
@@ -109,7 +118,7 @@ public class KeycloakService {
     }
 
     public String getUserIdByUsername(String username, String accessToken) {
-        String userEndpoint = config.getKeycloakUrl() + "/admin/realms/" + config.getRealm() + "/users?username=" + username;
+        String userEndpoint = keycloakUrl + "/admin/realms/" + keycloakRealm + "/users?username=" + username;
         Response response = ClientBuilder.newClient().target(userEndpoint)
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .header("Authorization", "Bearer " + accessToken)
@@ -135,7 +144,7 @@ public class KeycloakService {
 
         String roleId = roles.getOrDefault(roleName, roles.get("student")); // Default a "student" si no se encuentra
 
-        String roleEndpoint = config.getKeycloakUrl() + "/admin/realms/" + config.getRealm() + "/users/" + userId + "/role-mappings/realm";
+        String roleEndpoint = keycloakUrl + "/admin/realms/" + keycloakRealm + "/users/" + userId + "/role-mappings/realm";
 
         List<Map<String, String>> rolePayload = List.of(
                 Map.of(
